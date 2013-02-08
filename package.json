@@ -2,6 +2,14 @@
   "name": "connective",
   "version": "1.0.0",
   "description": "combine predicate (bool returning) functions with propositional logic connectives (and, or, not)",
+  "keywords": [
+    "functional",
+    "predicate",
+    "higher order functions",
+    "boolean",
+    "propositional",
+    "logic"
+  ],
   "main": "index.js",
   "directories": {
     "test": "test"
