@@ -1,6 +1,6 @@
 {
   "name": "connective-promise",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "boolean (true/false) and first order (some/every) logic with promises",
   "keywords": [
     "boolean",
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:AgileDiagnosis/node-connective.git"
+    "url": "git@github.com:AgileDiagnosis/connective-promise.git"
   },
   "author": "Agile Diagnosis <hello@agilediagnosis.com",
   "contributors": [
@@ -32,5 +32,8 @@
     "sinon": "~1.5.2",
     "q": "~0.8.12",
     "ski": "~1.0.0"
+  },
+  "dependencies": {
+    "q": "~0.8.12"
   }
 }
