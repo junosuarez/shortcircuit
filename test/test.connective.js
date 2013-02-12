@@ -3,113 +3,71 @@ chai.should()
 chai.use(require('chai-interface'))
 var sinon = require('sinon')
 chai.use(require('sinon-chai'))
+var Q = require('q')
+var K = require('ski/k')
 
-describe('connective', function () {
+describe('connective-promise', function () {
   var connective = require('../index')
-
-  var True = function () { return true }
-  var False = function () { return false }
-
-  var Truthy = function () { return 1 }
-  var Falsy = function () { return 0}
 
   it('has interface', function () {
     connective.should.have.interface({
       or: Function,
       and: Function,
-      not: Function
+      not: Function,
+      some: Function,
+      every: Function
     })
-  })
-
-  describe('not', function () {
-    var not = connective.not
-
-    it('returns an inverted predicate', function () {
-      var f = not(True)
-      f.should.be.a('function')
-      f().should.equal(false)
-
-      var t = not(False)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var fy = not(Truthy)
-      fy.should.be.a('function')
-      fy().should.equal(false)
-
-      var ty = not(Falsy)
-      ty.should.be.a('function')
-      ty().should.equal(true)
-    })
-
-    it('passes context through to term', function () {
-      var term = sinon.stub().returns(true)
-      var f = not(term)
-      var context = {}
-
-      f.call(context)
-      term.should.have.been.calledOn(context)
-    })
-
-    it('passes arguments through to term', function () {
-      var term = sinon.stub().returns(true)
-      var f = not(term)
-
-      f(1, 2, 3)
-      term.should.have.been.calledWithExactly(1, 2, 3)
-    })
-
   })
 
   describe('and', function () {
     var and = connective.and
 
-    it('returns a conjunctive predicate', function () {
-      var t = and(True)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var t = and(True, True)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var t = and(True, Truthy)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var f = and(True, False)
-      f.should.be.a('function')
-      f().should.equal(false)
-
-      var f = and(False, True)
-      f.should.be.a('function')
-      f().should.equal(false)
-
-      var f = and(Falsy, True)
-      f.should.be.a('function')
-      f().should.equal(false)
-
+    it('is rejected if there are no terms', function (done) {
+      and().then(null, function (err) {
+        err.should.be.instanceof(Error)
+      }).then(done, done)
     })
 
-    it('passes context through to term', function () {
-      var term1 = sinon.stub().returns(true)
-      var term2 = sinon.stub().returns(true)
-      var t = and(term1, term2)
-      var context = {}
+    it('resolves false if any of the terms is false', function (done) {
+      var t1 = K(Q.resolve(true))
+      var t2 = K(Q.resolve(false))
 
-      t.call(context)
-      term1.should.have.been.calledOn(context)
-      term2.should.have.been.calledOn(context)
+      and(t1, t2).then(function (val) {
+        val.should.equal(false)
+      }).then(done, done)
     })
 
-    it('passes arguments through to term', function () {
-      var term1 = sinon.stub().returns(true)
-      var term2 = sinon.stub().returns(true)
-      var t = and(term1, term2)
+    it('resolves true if all of the terms are true', function (done) {
+      var t1 = K(Q.resolve(true))
+      var t2 = K(Q.resolve(true))
 
-      t(1, 2, 3)
-      term1.should.have.been.calledWithExactly(1, 2, 3)
-      term2.should.have.been.calledWithExactly(1, 2, 3)
+      and(t1, t2).then(function (val) {
+        val.should.equal(true)
+      }).then(done, done)
+    })
+
+    it('executes terms in serial', function (done) {
+      var t1 = sinon.stub().returns(Q.resolve(true))
+      var t2 = sinon.stub().returns(Q.resolve(true))
+      var t3 = sinon.stub().returns(Q.resolve(true))
+
+      and(t1, t2, t3).then(function () {
+        t1.should.have.been.called
+        t2.should.have.been.calledAfter(t1)
+        t3.should.have.been.calledAfter(t2)
+      }).then(done, done)
+    })
+
+    it('only executes terms necessary', function (done) {
+      var t1 = sinon.stub().returns(Q.resolve(true))
+      var t2 = sinon.stub().returns(Q.resolve(false))
+      var t3 = sinon.stub().returns(Q.resolve(true))
+
+      and(t1, t2, t3).then(function () {
+        t1.should.have.been.called
+        t2.should.have.been.calledAfter(t1)
+        t3.should.not.have.been.caled
+      }).then(done, done)
     })
 
   })
@@ -117,64 +75,150 @@ describe('connective', function () {
   describe('or', function () {
     var or = connective.or
 
-    it('returns a disjunctive predicate', function () {
-      var t = or(True)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var t = or(True, True)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var t = or(True, Truthy)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var t = or(True, False)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var t = or(False, True)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var t = or(Falsy, True)
-      t.should.be.a('function')
-      t().should.equal(true)
-
-      var f = or(Falsy)
-      f.should.be.a('function')
-      f().should.equal(false)
-
-      var f = or(Falsy, False)
-      f.should.be.a('function')
-      f().should.equal(false)
-
-      var f = or(False)
-      f.should.be.a('function')
-      f().should.equal(false)
-
+    it('is rejected if there are no terms', function (done) {
+      or().then(null, function (err) {
+        err.should.be.instanceof(Error)
+      }).then(done, done)
     })
 
-    it('passes context through to term', function () {
-      var term1 = sinon.stub().returns(true)
-      var term2 = sinon.stub().returns(true)
-      var t = or(term1, term2)
-      var context = {}
+    it('resolves true if any of the terms is true', function (done) {
+      var t1 = K(Q.resolve(false))
+      var t2 = K(Q.resolve(true))
 
-      t.call(context)
-      term1.should.have.been.calledOn(context)
-      term2.should.not.have.been.called
+      or(t1, t2).then(function (val) {
+        val.should.equal(true)
+      }).then(done, done)
     })
 
-    it('passes arguments through to term', function () {
-      var term1 = sinon.stub().returns(true)
-      var term2 = sinon.stub().returns(true)
-      var t = or(term1, term2)
+    it('resolves false if all of the terms are false', function (done) {
+      var t1 = K(Q.resolve(false))
+      var t2 = K(Q.resolve(false))
 
-      t(1, 2, 3)
-      term1.should.have.been.calledWithExactly(1, 2, 3)
-      term2.should.not.have.been.called
+      or(t1, t2).then(function (val) {
+        val.should.equal(false)
+      }).then(done, done)
+    })
+
+    it('executes terms in serial', function (done) {
+      var t1 = sinon.stub().returns(Q.resolve(false))
+      var t2 = sinon.stub().returns(Q.resolve(false))
+      var t3 = sinon.stub().returns(Q.resolve(false))
+
+      or(t1, t2, t3).then(function () {
+        t1.should.have.been.called
+        t2.should.have.been.calledAfter(t1)
+        t3.should.have.been.calledAfter(t2)
+      }).then(done, done)
+    })
+
+    it('only executes terms necessary', function (done) {
+      var t1 = sinon.stub().returns(Q.resolve(false))
+      var t2 = sinon.stub().returns(Q.resolve(true))
+      var t3 = sinon.stub().returns(Q.resolve(false))
+
+      or(t1, t2, t3).then(function () {
+        t1.should.have.been.called
+        t2.should.have.been.calledAfter(t1)
+        t3.should.not.have.been.caled
+      }).then(done, done)
+    })
+
+  })
+
+  describe('not', function () {
+    var not = connective.not
+
+    it('is rejected if there are no terms', function (done) {
+      not().then(null, function () { done() })
+    })
+
+    it('returns true when the term is false', function (done) {
+      not(Q.resolve(false)).then(function (val) { val.should.equal(true)}).then(done, done)
+    })
+
+    it('returns false when the term is true', function (done) {
+      not(Q.resolve(true)).then(function (val) { val.should.equal(false)}).then(done, done)
+    })
+  })
+
+  describe('some', function () {
+    var some = connective.some
+
+    it('is rejected if there are no terms', function (done) {
+      some().then(null, function (err) {
+        err.should.be.instanceof(Error)
+      }).then(done, done)
+    })
+
+    it('resolves true if any of the terms is true', function (done) {
+      var t1 = K(Q.resolve(true))
+      var t2 = K(Q.resolve(false))
+
+      some(t1, t2).then(function (val) {
+        val.should.equal(true)
+      }).then(done, done)
+    })
+
+    it('resolves false if all of the terms are false', function (done) {
+      var t1 = K(Q.resolve(false))
+      var t2 = K(Q.resolve(false))
+
+      some(t1, t2).then(function (val) {
+        val.should.equal(false)
+      }).then(done, done)
+    })
+
+    it('executes all terms in parallel', function (done) {
+      var t1 = sinon.stub().returns(Q.resolve(true))
+      var t2 = sinon.stub().returns(Q.resolve(false))
+      var t3 = sinon.stub().returns(Q.resolve(true))
+
+      some(t1, t2, t3).then(function () {
+        t1.should.have.been.called
+        t2.should.have.been.called
+        t3.should.have.been.caled
+      }).then(done, done)
+    })
+
+  })
+
+  describe('every', function () {
+    var every = connective.every
+
+    it('is rejected if there are no terms', function (done) {
+      every().then(null, function (err) {
+        err.should.be.instanceof(Error)
+      }).then(done, done)
+    })
+
+    it('resolves false if any of the terms is false', function (done) {
+      var t1 = K(Q.resolve(true))
+      var t2 = K(Q.resolve(false))
+
+      every(t1, t2).then(function (val) {
+        val.should.equal(false)
+      }).then(done, done)
+    })
+
+    it('resolves true if all of the terms are true', function (done) {
+      var t1 = K(Q.resolve(true))
+      var t2 = K(Q.resolve(true))
+
+      every(t1, t2).then(function (val) {
+        val.should.equal(true)
+      }).then(done, done)
+    })
+
+    it('executes all terms in parallel', function (done) {
+      var t1 = sinon.stub().returns(Q.resolve(true))
+      var t2 = sinon.stub().returns(Q.resolve(false))
+      var t3 = sinon.stub().returns(Q.resolve(true))
+
+      every(t1, t2, t3).then(function () {
+        t1.should.have.been.called
+        t2.should.have.been.called
+        t3.should.have.been.called
+      }).then(done, done)
     })
 
   })

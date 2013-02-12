@@ -1,35 +1,87 @@
-var each = Array.prototype.forEach
-var every = Array.prototype.every
-var some = Array.prototype.some
+var Q = require('q')
+var slice = Array.prototype.slice
+
+function isPromise(p) {
+  return p && typeof p.then === 'function'
+}
+
+function pcall (p) {
+  var t = typeof p
+  if (t === 'boolean') return Q.resolve(p)
+  if (t === 'function') return pcall(p())
+  if (isPromise(p)) return p
+  return Q.resolve(Boolean(p))
+}
 
 function or () {
-  var terms = arguments
-  return function () {
-    var ctx = this;
-    var args = arguments;
-    return some.call(terms, function (term) {
-      return !!term.apply(ctx, args)
-    })
+  var args = arguments;
+  var term = args[0]
+  if (!term) return Q.reject(new Error('No terms'));
+  if (args.length === 1) {
+    return pcall(term).then(Boolean)
   }
+
+  return pcall(term).then(function (val) {
+    if (val) return true;
+    // async recurse
+    return or.apply(null, slice.call(args, 1))
+  })
 }
 
 function and () {
-  var terms = arguments
-  return function () {
-    var ctx = this;
-    var args = arguments;
-    return every.call(terms, function (term) {
-      return !!term.apply(ctx, args)
-    })
+  var args = arguments;
+  var term = args[0]
+  if (!term) return Q.reject(new Error('No terms'))
+  if (args.length === 1) {
+    return pcall(term).then(Boolean)
   }
+
+  return pcall(term).then(function (val) {
+    if (!val) return false;
+    // asycn recurse
+    return and.apply(null, slice.call(args, 1))
+  })
 }
 
-function not (term) {
-  return function () {
-    return !term.apply(this, arguments)
+
+function some () {
+  var args = arguments;
+  var term = args[0]
+  if (!term) return Q.reject(new Error('No terms'))
+  if (args.length === 1) {
+    return pcall(term).then(Boolean)
   }
+
+  var promises = slice.call(arguments).map(pcall)
+
+  return Q.all(promises).then(function (results) {
+    return results.some(Boolean)
+  })
+}
+
+function every () {
+  var args = arguments;
+  var term = args[0]
+  if (!term) return Q.reject(new Error('No terms'))
+  if (args.length === 1) {
+    return pcall(term).then(Boolean)
+  }
+
+  var promises = slice.call(arguments).map(pcall)
+
+  return Q.all(promises).then(function (results) {
+    return results.every(Boolean)
+  })
+}
+
+
+function not(term) {
+  if (!term) return Q.reject(new Error('No term'))
+  return pcall(term).then(function (x) { return !x })
 }
 
 module.exports.or = or
 module.exports.and = and
 module.exports.not = not
+module.exports.every= every
+module.exports.some = some

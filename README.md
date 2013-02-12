@@ -1,76 +1,78 @@
-# connective
-combine predicate (bool returning) functions with propositional logic connectives (and, or, not)
+# connective-promise
+boolean (true/false) and first order (some/every) logic with promises
 
 ## installation
 
-    $ npm install connective
+    $ npm install connective-promise
 
 ## usage
 ```js
-var connective = require('connective')
-var or = connective.or
-var and = connective.and
-var not = connective.not
+var connectiveP = require('connective-promise')
+var or = connectiveP.or
+var and = connectiveP.and
+var not = connectiveP.not
+var every = connectiveP.every
+var some = connectiveP.some
+var Q = require('your favorite promises implementation')
 
-function wearsFlannel (person) {
-  return person.wearing === 'flannel'
+function userIsAuthenticated () {
+  return Q.resolve(true)
 }
 
-function ridesBikes (person) {
-  return person.rides === 'bikes'
-}
+weGetSignal = Q.resolve(true)
 
-var isSquare = not(or(wearsFlannel, ridesBikes))
-var isHipster = and(wearsFlannel, ridesBikes)
-var isLumberjack = and(wearsFlannel, not(ridesBikes))
+weAreReady = false
 
-var people = {
-  jon: { wearing: 'flannel', rides: 'nothing'}
-  kurt: { wearing: 'flannel', rides: 'bikes'}
-  bob: { wearing: 'hoodie', rides: 'scooters'}
-}
+connectiveP.or(weAreReady, weGetSignal, userIsAuthenticated, weGetSignal)
+// => Promise<true>,
+// terms evaluated in serial, so userIsAuthenticated not called
 
-for(var name in people) {
-  var person = people[name]
-  console.log(name, isSquare(person), isHipster(person), isLumberjack(person))
-}
+
+
+connectiveP.some(weAreReady, userIsAuthenticated, weGetSignal)
+// => Promise<true>,
+// terms evaluated in parallel, so userIsAuthenticated is called
+
+
+
+connectiveP.all(weAreReady, userIsAuthenticated, weGetSignal)
+// => Promise<false>,
+// terms evaluated in serial so userIsAuthenticated is not called
+
+
+connectiveP.every(weAreReady, userIsAuthenticated, weGetSignal))
+// => Promise<false>,
+// terms evaluated in parallel, so userIsAuthenticated is not called
+
+
+connectiveP.not(userIsAuthenticated)
+// => Promise<false>
+
 ```
 
 ## about
 
-In propositional logic, boolean statements are joined together by connectives. Logicians would call them conjunctions,  disjunctions, and negations, but programmers know them as `&&`, `||`, and `!`. The problem with using these language-level connective operators is that they apply at evaluation time, and thus aren't very composable.
+`connective-promise` helps you compose boolean values, boolean promises, and continuations (functions without parameters) returning booleans or boolean promises.
 
-Functions which take a value and return a boolean are known as predicates. They are useful, for example, in conditional branching, validation, and business rules.
+In synchronous code, it can be useful to depend on operator precedence for control flow, for example, to evaluate a function depending on a certain value:
 
-The functions in `connective` let you compose predicates into composite expressions which can be used as functions and evaluated later against other data.
+    var showPage = (userIsAuthenticated() && userIsAuthorized()) || todayIsTuesday;
 
-## api
+In this case, we would only have to check for authorization if the user passes the first condition. This kind of logic is very clear in synchronous code, but can be obscured in callbacks in async code.
 
-In describing function signatures below, `Predicate` is a function which takes any number of arguments and returns a `boolean`: `function(...) => boolean`
+Now, we could have those be promise-returning functions and write:
 
-### `connective.or: function (term1 : Predicate, ..., termN : Predicate) => Predicate`
+    var showPage = connectiveP.or(todayIsTuesday, connectiveP.and(userIsAuthenticated, userIsAuthorized))
 
-Returns a Predicate combining one or more Predicate terms with a logical `or` (disjunction), roughly equivalent to writing
+where userIsAuthenticated is a function which returns a promise. Here, if the term is necessary to evaluate the overall truth of the statement, `connective-promise` will invoke the function and await the promised value.
 
-    function (x) { return Predicate1(x) || Predicate2(x) }
+In cases where there are no side effects and latency is more important than economy of computation, you can evaluate the terms in parallel.
 
-The returned Predicate will pass through its `this` context and arguments to each of the Predicate terms which are necessary to evaluate the expression.
+And of course, you have first call support for error propagation through `promise.reject`.
 
-### `connective.and: function (term1 : Predicate, ... termN : Predicate) => Predicate`
+## see also
 
-Returns a Predicate combining one or more Predicate terms with a logical `and` (conjunction), roughly equivalent to writing
-
-    function (x) { return Predicate1(x) && Predicate2(x) }
-
-The returned Predicate will pass through its `this` context and arguments to each of the Predicate terms.
-
-### `connective.not: function (term : Predicate) => Predicate`
-
-Returns a Predicate negating `term`, roughly equivalent to writing
-
-    function (x) { return !Predicate(x) }
-
-The returned Predicate will pass through its `this` context and arguments to `term`
+[connective](https://npmjs.org/package/connective) offers similar composable semantics for synchronous predicate functions.
 
 ## running the tests
 
