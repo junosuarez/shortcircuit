@@ -6,11 +6,11 @@ chai.use(require('sinon-chai'))
 var Q = require('q')
 var K = require('ski/k')
 
-describe('connective-promise', function () {
-  var connective = require('../index')
+describe('shortcircuit-promise', function () {
+  var shortcircuit = require('../index')
 
   it('has interface', function () {
-    connective.should.have.interface({
+    shortcircuit.should.have.interface({
       or: Function,
       and: Function,
       not: Function,
@@ -20,7 +20,7 @@ describe('connective-promise', function () {
   })
 
   describe('and', function () {
-    var and = connective.and
+    var and = shortcircuit.and
 
     it('is rejected if there are no terms', function (done) {
       and().then(null, function (err) {
@@ -73,7 +73,7 @@ describe('connective-promise', function () {
   })
 
   describe('or', function () {
-    var or = connective.or
+    var or = shortcircuit.or
 
     it('is rejected if there are no terms', function (done) {
       or().then(null, function (err) {
@@ -123,10 +123,22 @@ describe('connective-promise', function () {
       }).then(done, done)
     })
 
+    it('is rejected if any of the executed terms is rejected', function (done) {
+      var err = new Error('foo')
+      var t1 = sinon.stub().returns(Q.resolve(false))
+      var t2 = sinon.stub().returns(Q.reject(err))
+
+      or(t1, t2).then(function () {
+        done(new Error('should not resolve'))
+      }, function (e) {
+        e.should.equal(err)
+        done()
+      })
+    })
   })
 
   describe('not', function () {
-    var not = connective.not
+    var not = shortcircuit.not
 
     it('is rejected if there are no terms', function (done) {
       not().then(null, function () { done() })
@@ -142,7 +154,7 @@ describe('connective-promise', function () {
   })
 
   describe('some', function () {
-    var some = connective.some
+    var some = shortcircuit.some
 
     it('is rejected if there are no terms', function (done) {
       some().then(null, function (err) {
@@ -183,7 +195,7 @@ describe('connective-promise', function () {
   })
 
   describe('every', function () {
-    var every = connective.every
+    var every = shortcircuit.every
 
     it('is rejected if there are no terms', function (done) {
       every().then(null, function (err) {
