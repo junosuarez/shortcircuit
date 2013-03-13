@@ -1,7 +1,7 @@
 # shortcircuit
 asynchronous short circuit evaluation
 
-> Nature operates in the shortest way possible."
+> "Nature operates in the shortest way possible."
 -Aristotle
 
 ## installation
