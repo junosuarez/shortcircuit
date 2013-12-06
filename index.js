@@ -1,4 +1,4 @@
-var Q = require('q')
+var Promise = require('bluebird')
 var slice = Array.prototype.slice
 
 function isPromise(p) {
@@ -7,16 +7,16 @@ function isPromise(p) {
 
 function pcall (p) {
   var t = typeof p
-  if (t === 'boolean') return Q.resolve(p)
+  if (t === 'boolean') return Promise.cast(p)
   if (t === 'function') return pcall(p())
   if (isPromise(p)) return p
-  return Q.resolve(Boolean(p))
+  return Promise.resolve(Boolean(p))
 }
 
 function or () {
   var args = arguments;
   var term = args[0]
-  if (!term) return Q.reject(new Error('No terms'));
+  if (!term) return Promise.reject(new Error('No terms'));
   if (args.length === 1) {
     return pcall(term).then(Boolean)
   }
@@ -31,7 +31,7 @@ function or () {
 function and () {
   var args = arguments;
   var term = args[0]
-  if (!term) return Q.reject(new Error('No terms'))
+  if (!term) return Promise.reject(new Error('No terms'))
   if (args.length === 1) {
     return pcall(term).then(Boolean)
   }
@@ -47,14 +47,14 @@ function and () {
 function some () {
   var args = arguments;
   var term = args[0]
-  if (!term) return Q.reject(new Error('No terms'))
+  if (!term) return Promise.reject(new Error('No terms'))
   if (args.length === 1) {
     return pcall(term).then(Boolean)
   }
 
   var promises = slice.call(arguments).map(pcall)
 
-  return Q.all(promises).then(function (results) {
+  return Promise.all(promises).then(function (results) {
     return results.some(Boolean)
   })
 }
@@ -62,21 +62,21 @@ function some () {
 function every () {
   var args = arguments;
   var term = args[0]
-  if (!term) return Q.reject(new Error('No terms'))
+  if (!term) return Promise.reject(new Error('No terms'))
   if (args.length === 1) {
     return pcall(term).then(Boolean)
   }
 
   var promises = slice.call(arguments).map(pcall)
 
-  return Q.all(promises).then(function (results) {
+  return Promise.all(promises).then(function (results) {
     return results.every(Boolean)
   })
 }
 
 
 function not(term) {
-  if (!term) return Q.reject(new Error('No term'))
+  if (!term) return Promise.reject(new Error('No term'))
   return pcall(term).then(function (x) { return !x })
 }
 

@@ -3,7 +3,7 @@ chai.should()
 chai.use(require('chai-interface'))
 var sinon = require('sinon')
 chai.use(require('sinon-chai'))
-var Q = require('q')
+var Promise = require('bluebird')
 var K = require('ski/k')
 
 describe('shortcircuit-promise', function () {
@@ -29,8 +29,8 @@ describe('shortcircuit-promise', function () {
     })
 
     it('resolves false if any of the terms is false', function (done) {
-      var t1 = K(Q.resolve(true))
-      var t2 = K(Q.resolve(false))
+      var t1 = K(Promise.resolve(true))
+      var t2 = K(Promise.resolve(false))
 
       and(t1, t2).then(function (val) {
         val.should.equal(false)
@@ -38,8 +38,8 @@ describe('shortcircuit-promise', function () {
     })
 
     it('resolves true if all of the terms are true', function (done) {
-      var t1 = K(Q.resolve(true))
-      var t2 = K(Q.resolve(true))
+      var t1 = K(Promise.resolve(true))
+      var t2 = K(Promise.resolve(true))
 
       and(t1, t2).then(function (val) {
         val.should.equal(true)
@@ -47,9 +47,9 @@ describe('shortcircuit-promise', function () {
     })
 
     it('executes terms in serial', function (done) {
-      var t1 = sinon.stub().returns(Q.resolve(true))
-      var t2 = sinon.stub().returns(Q.resolve(true))
-      var t3 = sinon.stub().returns(Q.resolve(true))
+      var t1 = sinon.stub().returns(Promise.resolve(true))
+      var t2 = sinon.stub().returns(Promise.resolve(true))
+      var t3 = sinon.stub().returns(Promise.resolve(true))
 
       and(t1, t2, t3).then(function () {
         t1.should.have.been.called
@@ -59,9 +59,9 @@ describe('shortcircuit-promise', function () {
     })
 
     it('only executes terms necessary', function (done) {
-      var t1 = sinon.stub().returns(Q.resolve(true))
-      var t2 = sinon.stub().returns(Q.resolve(false))
-      var t3 = sinon.stub().returns(Q.resolve(true))
+      var t1 = sinon.stub().returns(Promise.resolve(true))
+      var t2 = sinon.stub().returns(Promise.resolve(false))
+      var t3 = sinon.stub().returns(Promise.resolve(true))
 
       and(t1, t2, t3).then(function () {
         t1.should.have.been.called
@@ -82,8 +82,8 @@ describe('shortcircuit-promise', function () {
     })
 
     it('resolves true if any of the terms is true', function (done) {
-      var t1 = K(Q.resolve(false))
-      var t2 = K(Q.resolve(true))
+      var t1 = K(Promise.resolve(false))
+      var t2 = K(Promise.resolve(true))
 
       or(t1, t2).then(function (val) {
         val.should.equal(true)
@@ -91,8 +91,8 @@ describe('shortcircuit-promise', function () {
     })
 
     it('resolves false if all of the terms are false', function (done) {
-      var t1 = K(Q.resolve(false))
-      var t2 = K(Q.resolve(false))
+      var t1 = K(Promise.resolve(false))
+      var t2 = K(Promise.resolve(false))
 
       or(t1, t2).then(function (val) {
         val.should.equal(false)
@@ -100,9 +100,9 @@ describe('shortcircuit-promise', function () {
     })
 
     it('executes terms in serial', function (done) {
-      var t1 = sinon.stub().returns(Q.resolve(false))
-      var t2 = sinon.stub().returns(Q.resolve(false))
-      var t3 = sinon.stub().returns(Q.resolve(false))
+      var t1 = sinon.stub().returns(Promise.resolve(false))
+      var t2 = sinon.stub().returns(Promise.resolve(false))
+      var t3 = sinon.stub().returns(Promise.resolve(false))
 
       or(t1, t2, t3).then(function () {
         t1.should.have.been.called
@@ -112,9 +112,9 @@ describe('shortcircuit-promise', function () {
     })
 
     it('only executes terms necessary', function (done) {
-      var t1 = sinon.stub().returns(Q.resolve(false))
-      var t2 = sinon.stub().returns(Q.resolve(true))
-      var t3 = sinon.stub().returns(Q.resolve(false))
+      var t1 = sinon.stub().returns(Promise.resolve(false))
+      var t2 = sinon.stub().returns(Promise.resolve(true))
+      var t3 = sinon.stub().returns(Promise.resolve(false))
 
       or(t1, t2, t3).then(function () {
         t1.should.have.been.called
@@ -125,8 +125,8 @@ describe('shortcircuit-promise', function () {
 
     it('is rejected if any of the executed terms is rejected', function (done) {
       var err = new Error('foo')
-      var t1 = sinon.stub().returns(Q.resolve(false))
-      var t2 = sinon.stub().returns(Q.reject(err))
+      var t1 = sinon.stub().returns(Promise.resolve(false))
+      var t2 = sinon.stub().returns(Promise.reject(err))
 
       or(t1, t2).then(function () {
         done(new Error('should not resolve'))
@@ -145,11 +145,11 @@ describe('shortcircuit-promise', function () {
     })
 
     it('returns true when the term is false', function (done) {
-      not(Q.resolve(false)).then(function (val) { val.should.equal(true)}).then(done, done)
+      not(Promise.resolve(false)).then(function (val) { val.should.equal(true)}).then(done, done)
     })
 
     it('returns false when the term is true', function (done) {
-      not(Q.resolve(true)).then(function (val) { val.should.equal(false)}).then(done, done)
+      not(Promise.resolve(true)).then(function (val) { val.should.equal(false)}).then(done, done)
     })
   })
 
@@ -163,8 +163,8 @@ describe('shortcircuit-promise', function () {
     })
 
     it('resolves true if any of the terms is true', function (done) {
-      var t1 = K(Q.resolve(true))
-      var t2 = K(Q.resolve(false))
+      var t1 = K(Promise.resolve(true))
+      var t2 = K(Promise.resolve(false))
 
       some(t1, t2).then(function (val) {
         val.should.equal(true)
@@ -172,8 +172,8 @@ describe('shortcircuit-promise', function () {
     })
 
     it('resolves false if all of the terms are false', function (done) {
-      var t1 = K(Q.resolve(false))
-      var t2 = K(Q.resolve(false))
+      var t1 = K(Promise.resolve(false))
+      var t2 = K(Promise.resolve(false))
 
       some(t1, t2).then(function (val) {
         val.should.equal(false)
@@ -181,9 +181,9 @@ describe('shortcircuit-promise', function () {
     })
 
     it('executes all terms in parallel', function (done) {
-      var t1 = sinon.stub().returns(Q.resolve(true))
-      var t2 = sinon.stub().returns(Q.resolve(false))
-      var t3 = sinon.stub().returns(Q.resolve(true))
+      var t1 = sinon.stub().returns(Promise.resolve(true))
+      var t2 = sinon.stub().returns(Promise.resolve(false))
+      var t3 = sinon.stub().returns(Promise.resolve(true))
 
       some(t1, t2, t3).then(function () {
         t1.should.have.been.called
@@ -204,8 +204,8 @@ describe('shortcircuit-promise', function () {
     })
 
     it('resolves false if any of the terms is false', function (done) {
-      var t1 = K(Q.resolve(true))
-      var t2 = K(Q.resolve(false))
+      var t1 = K(Promise.resolve(true))
+      var t2 = K(Promise.resolve(false))
 
       every(t1, t2).then(function (val) {
         val.should.equal(false)
@@ -213,8 +213,8 @@ describe('shortcircuit-promise', function () {
     })
 
     it('resolves true if all of the terms are true', function (done) {
-      var t1 = K(Q.resolve(true))
-      var t2 = K(Q.resolve(true))
+      var t1 = K(Promise.resolve(true))
+      var t2 = K(Promise.resolve(true))
 
       every(t1, t2).then(function (val) {
         val.should.equal(true)
@@ -222,9 +222,9 @@ describe('shortcircuit-promise', function () {
     })
 
     it('executes all terms in parallel', function (done) {
-      var t1 = sinon.stub().returns(Q.resolve(true))
-      var t2 = sinon.stub().returns(Q.resolve(false))
-      var t3 = sinon.stub().returns(Q.resolve(true))
+      var t1 = sinon.stub().returns(Promise.resolve(true))
+      var t2 = sinon.stub().returns(Promise.resolve(false))
+      var t3 = sinon.stub().returns(Promise.resolve(true))
 
       every(t1, t2, t3).then(function () {
         t1.should.have.been.called
