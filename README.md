@@ -37,11 +37,6 @@ asynchronous short circuit evaluation
     // terms evaluated in parallel, so userIsAuthenticated is called
 
 
-    shortcircuit.all(weAreReady, userIsAuthenticated, weGetSignal)
-    // => Promise<false>,
-    // terms evaluated in serial so userIsAuthenticated is not called
-
-
     shortcircuit.every(weAreReady, userIsAuthenticated, weGetSignal))
     // => Promise<false>,
     // terms evaluated in parallel, so userIsAuthenticated is not called
